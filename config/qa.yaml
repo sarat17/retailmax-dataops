@@ -1,0 +1,5 @@
+entorno: qa
+base_datos: retailmax_qa
+datos: snapshot_anonimizado
+bucket: retailmax-staging-data
+log_level: INFO

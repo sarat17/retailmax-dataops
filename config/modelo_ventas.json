@@ -1,0 +1,5 @@
+{
+  "modelo": "prediccion_ventas",
+  "semilla": 42,
+  "mape_maximo": 0.15
+}

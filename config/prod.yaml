@@ -1,0 +1,5 @@
+entorno: prod
+base_datos: retailmax
+datos: reales
+despliegue: canary
+log_level: WARNING

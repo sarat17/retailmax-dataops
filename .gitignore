@@ -1,0 +1,18 @@
+# Datos (se versionan con DVC, no con Git)
+data/*.csv
+data/*.parquet
+!data/muestra/
+# Contraseñas y llaves
+.env
+*.pem
+# Modelos entrenados y archivos temporales
+*.pkl
+modelo/
+__pycache__/
+.pytest_cache/
+.ipynb_checkpoints/
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl

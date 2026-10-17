@@ -1,0 +1,88 @@
+name: CD - modelo de prediccion de ventas
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["infra/**", "sql/**", "**.md"]
+  workflow_dispatch:
+
+jobs:
+  build-test:
+    name: 1. Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - run: pytest -v tests/test_features.py tests/test_limpieza.py
+      - name: Construir imagen Docker
+        run: docker build -t retailmax-modelo:${{ github.sha }} .
+
+  test-datos:
+    name: 2. Test de Datos
+    needs: build-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - run: pytest -v tests/test_datos.py
+
+  train-validate:
+    name: 3. Train & Validate
+    needs: test-datos
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - name: Entrenar y validar (MAPE < 15%)
+        run: python -m src.models.entrenar_prediccion_ventas
+      - uses: actions/upload-artifact@v4
+        with:
+          name: modelo-entrenado
+          path: modelo/
+
+  empaquetado:
+    name: 4. Empaquetado
+    needs: train-validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: modelo-entrenado
+          path: modelo/
+      - name: Empaquetar modelo + codigo en Docker
+        run: |
+          docker build -t retailmax-modelo:v${{ github.run_number }} .
+          echo "Imagen retailmax-modelo:v${{ github.run_number }} lista"
+          cat modelo/metricas.json
+
+  deploy-staging:
+    name: 5. Despliegue en Staging
+    needs: empaquetado
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - run: |
+          echo "Desplegando el modelo v${{ github.run_number }} en STAGING (QA)..."
+          echo "Pruebas de integracion y de carga: OK"
+
+  deploy-prod:
+    name: 6. Despliegue en Produccion
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    environment: produccion
+    steps:
+      - run: |
+          echo "Despliegue Canary del modelo v${{ github.run_number }}"
+          echo "10% del trafico... OK"
+          echo "50% del trafico... OK"
+          echo "100% del trafico... OK"

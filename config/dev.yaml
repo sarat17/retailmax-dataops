@@ -1,0 +1,4 @@
+entorno: dev
+base_datos: retailmax_dev
+datos: anonimizados_muestra
+log_level: DEBUG

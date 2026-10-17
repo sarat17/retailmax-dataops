@@ -1,0 +1,40 @@
+name: Migraciones SQL (Flyway)
+
+on:
+  pull_request:
+    paths: ["sql/**"]
+  push:
+    branches: [main]
+    paths: ["sql/**"]
+  workflow_dispatch:
+
+jobs:
+  migrar:
+    name: Aplicar migraciones con Flyway
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: retailmax
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s
+          --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: flyway migrate
+        run: |
+          docker run --rm --network host -v "$PWD/sql/migraciones:/flyway/sql" \
+            flyway/flyway -url=jdbc:postgresql://localhost:5432/retailmax \
+            -user=postgres -password=test migrate
+      - name: flyway info (historial de migraciones)
+        run: |
+          docker run --rm --network host -v "$PWD/sql/migraciones:/flyway/sql" \
+            flyway/flyway -url=jdbc:postgresql://localhost:5432/retailmax \
+            -user=postgres -password=test info
+      - name: Prueba de esquema
+        env:
+          PGPASSWORD: test
+        run: psql -h localhost -U postgres -d retailmax -v ON_ERROR_STOP=1 -f sql/pruebas/verificar_esquema.sql
