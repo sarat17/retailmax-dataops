@@ -133,3 +133,9 @@ resource "aws_iam_instance_profile" "dev" {
   name = "retailmax-dev-profile"
   role = aws_iam_role.dev_lectura.name
 }
+
+
+resource "aws_s3_bucket" "datos_chile" {
+  bucket = "retailmax-datos-chile"
+  tags   = { Entorno = "qa", Pais = "CL" }
+}
