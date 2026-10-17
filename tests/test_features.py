@@ -1,13 +1,18 @@
-import pandas as pd
-
-from src.features.crear_variables import COLUMNAS_MODELO, crear_variables
+from src.features.crear_variables import es_temporada_alta
 
 
-def test_crear_variables_no_modifica_original():
-    df = pd.DataFrame({"mes": [1], "es_fin_de_semana": [0]})
-    crear_variables(df)
-    assert list(df.columns) == ["mes", "es_fin_de_semana"]
+def test_temporada_alta_noviembre_y_diciembre():
+    assert es_temporada_alta(11) == 1
+    assert es_temporada_alta(12) == 1
 
 
-def test_columnas_modelo_existen():
-    assert "mes" in COLUMNAS_MODELO
+def test_temporada_normal():
+    assert es_temporada_alta(3) == 0
+
+
+def test_crear_variables_agrega_temporada():
+    import pandas as pd
+    from src.features.crear_variables import crear_variables
+
+    df = crear_variables(pd.DataFrame({"mes": [12, 3], "es_fin_de_semana": [0, 1]}))
+    assert list(df["temporada_alta"]) == [1, 0]
